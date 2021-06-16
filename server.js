@@ -11,6 +11,11 @@ server.use(cors());
 const PORT = process.env.PORT || 3030;
  require("dotenv").config();
 
+ // localhost:3030/
+ server.get('/',(req,res) =>{
+    res.send('Home...');
+})
+
 // localhost:3030/test
 server.get('/test',(req, res)=>{
   res.send('hello');
