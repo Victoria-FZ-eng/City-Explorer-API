@@ -13,5 +13,9 @@ This is build as a server using node js and express.
 
 ## Change Log
 14th June 2021, lab07 (creating front back end app).
+15th June , lab07 (completing the lab).
 
 ## Credit and Collaborations
+
+TA. Anolla Haddad.
+TA. Aisha
