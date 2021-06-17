@@ -16,6 +16,7 @@ This is build as a server using node js and express.
 15th June , lab07 (completing the lab).
 16th June, lab07 (DONE).
 17th June, lab08 (back-end almost done).
+18th June, lab08 (back-end done).
 
 ## Credit and Collaborations
 
