@@ -15,27 +15,27 @@ server.use(cors());
 
 
 // localhost:3030
-const PORT = process.env.PORT || 3030;
+const PORT = process.env.PORT || 3050;
  require("dotenv").config();
 
 
 
- // localhost:3030/
+ // localhost:3050/
  server.get('/',(req,res) =>{
     res.send('Home...');
 })
 
-// localhost:3030/test
+// localhost:3050/test
 server.get('/test',(req, res)=>{
   res.send('hello');
 })
 
-// localhost:3030/weatherData
+// localhost:3050/weatherData
 server.get('/weatherData', (req, res)=>{
     res.send(weather);
 })
 
-// localhost:3030/lon-lat
+// localhost:3050/lon-lat
 server.get('/lon-lat', (req, res)=>{
     let dataArr =weather.map((city)=> {
         return [`longitude: ${city.lon}` , `latitude: ${city.lat}`];
@@ -43,42 +43,45 @@ server.get('/lon-lat', (req, res)=>{
     res.send(dataArr);
 })
 
-// localhost:3030/movies?location=germany
-server.get('/movies', async (req, res)=>{
+// localhost:3050/movies?location=germany
+server.get('/movies',  (req, res)=>{
   let location = req.query.location;
   let movieKey= process.env.MOVIE_API_KEY;
   let movieURL= `https://api.themoviedb.org/3/search/movie?api_key=${movieKey}&query=${location}`;
 
-  try{
-    let movies = await axios.get(movieURL);
-    // console.log(`${movies.data.results[0].id} resultdatanow`);
-    let arrofMovies = [];
-    movies.data.results.map(movie=> {
-      arrofMovies.push(movie);
-    });
-    let arraytoObjs = arrofMovies.map(obj=> new Movies(obj));
-   
-    res.send(arraytoObjs);
-    console.log(arrofMovies);
-    // console.log (arrofMovies == true);
-
-  }
-  catch{
-    res.status =500;
-    res.send(`ERROR: MOVIE'S DATA NOT FOUND FOR REQUIRED LOCATION`);
-  }
+  axios
+    .get(movieURL).then(movies=>{
+      
+      const moviesObjects = movies.data.results.map(obj=> new Movies (obj));
+      
+      if( moviesObjects.length != 0){
+      res.send(moviesObjects);
+      console.log(moviesObjects);}
+      else{
+          res.status(500).send(`${err}: MOVIE'S DATA NOT FOUND FOR REQUIRED LOCATION`);
+          console.log("not valid");
+      }
+      
+    })
+    .catch(err => {
+      res.status(500).send(`${err}: MOVIE'S DATA NOT FOUND FOR REQUIRED LOCATION`);
+      console.log("catch");
+  })
+  
 
 })
  class Movies {
    constructor(film){
+     this.poster = film.poster_path,
      this.name = film.original_title,
      this.description = film.overview,
-     this.poster = film.poster_path
+     this.date = film.release_date,
+     this.pop = film.popularity
    }
 
  }
 
-// localhost:3030/searchCity?cityName=amman
+// localhost:3050/searchCity?cityName=amman
 server.get('/searchCity',async (req,res)=>{
      let cityName = req.query.cityName;
     //  console.log(`weather: ${weather} kjhkhkjhkjhkjhkjhkh`)
@@ -100,7 +103,7 @@ server.get('/searchCity',async (req,res)=>{
   }
 })
 
-// localhost:3030/cityData?cityName=paris
+// localhost:3050/cityData?cityName=paris
 server.get('/cityData',async (req, res)=>{
   let cityName = req.query.cityName;
   let weatherKey= process.env.WEATHER_API_KEY;
