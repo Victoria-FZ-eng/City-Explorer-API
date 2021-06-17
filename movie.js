@@ -1,5 +1,7 @@
 const axios = require('axios');
 
+let ramMemoryMovie= {};
+
 
 class Movies {
     constructor(film){
@@ -12,9 +14,16 @@ class Movies {
   }
 const mv = function movies (req, res){
     let location = req.query.location;
-    let movieKey= process.env.MOVIE_API_KEY;
+    
+    
+    if(ramMemoryMovie[location] !== undefined) {
+       res.send(ramMemoryMovie[location]);
+       console.log("inside if");
+    }
+    else {
+      let movieKey= process.env.MOVIE_API_KEY;
     let movieURL= `https://api.themoviedb.org/3/search/movie?api_key=${movieKey}&query=${location}`;
-  
+        console.log("inside else");
     axios
       .get(movieURL).then(movies=>{
         
@@ -22,7 +31,8 @@ const mv = function movies (req, res){
         
         if( moviesObjects.length != 0){
         res.send(moviesObjects);
-        console.log(moviesObjects);}
+        // console.log(moviesObjects);
+      }
         else{
             res.status(500).send(`${err}: MOVIE'S DATA NOT FOUND FOR REQUIRED LOCATION`);
             console.log("not valid");
@@ -32,6 +42,8 @@ const mv = function movies (req, res){
         res.status(500).send(`${err}: MOVIE'S DATA NOT FOUND FOR REQUIRED LOCATION`);
         console.log("catch");
     })
+    }
+    
   };
 
   module.exports = mv;
