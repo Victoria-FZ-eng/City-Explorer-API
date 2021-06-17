@@ -5,135 +5,48 @@
 const express = require('express');
 const server = express();
 
-const axios = require('axios');
-
-const weather = require('./data/weather.json');
 
 const cors = require('cors');
-const { response } = require('express');
 server.use(cors()); 
 
+const wthr = require('./weather.js');
 
-// localhost:3030
+const mv = require('./movie.js')
+
+// localhost:3050
 const PORT = process.env.PORT || 3050;
- require("dotenv").config();
+require("dotenv").config();
 
 
-
- // localhost:3050/
- server.get('/',(req,res) =>{
-    res.send('Home...');
-})
+// localhost:3050/
+server.get('/',home);
 
 // localhost:3050/test
-server.get('/test',(req, res)=>{
-  res.send('hello');
-})
+server.get('/test',test);
 
 // localhost:3050/weatherData
-server.get('/weatherData', (req, res)=>{
-    res.send(weather);
-})
+server.get('/weatherData', wthr.weatherData);
 
 // localhost:3050/lon-lat
-server.get('/lon-lat', (req, res)=>{
-    let dataArr =weather.map((city)=> {
-        return [`longitude: ${city.lon}` , `latitude: ${city.lat}`];
-    }) 
-    res.send(dataArr);
-})
+server.get('/lon-lat', wthr.weatherLonLat);
 
 // localhost:3050/movies?location=germany
-server.get('/movies',  (req, res)=>{
-  let location = req.query.location;
-  let movieKey= process.env.MOVIE_API_KEY;
-  let movieURL= `https://api.themoviedb.org/3/search/movie?api_key=${movieKey}&query=${location}`;
-
-  axios
-    .get(movieURL).then(movies=>{
-      
-      const moviesObjects = movies.data.results.map(obj=> new Movies (obj));
-      
-      if( moviesObjects.length != 0){
-      res.send(moviesObjects);
-      console.log(moviesObjects);}
-      else{
-          res.status(500).send(`${err}: MOVIE'S DATA NOT FOUND FOR REQUIRED LOCATION`);
-          console.log("not valid");
-      }
-      
-    })
-    .catch(err => {
-      res.status(500).send(`${err}: MOVIE'S DATA NOT FOUND FOR REQUIRED LOCATION`);
-      console.log("catch");
-  })
-  
-
-})
- class Movies {
-   constructor(film){
-     this.poster = film.poster_path,
-     this.name = film.original_title,
-     this.description = film.overview,
-     this.date = film.release_date,
-     this.pop = film.popularity
-   }
-
- }
+server.get('/movies',mv);
 
 // localhost:3050/searchCity?cityName=amman
-server.get('/searchCity',async (req,res)=>{
-     let cityName = req.query.cityName;
-    //  console.log(`weather: ${weather} kjhkhkjhkjhkjhkjhkh`)
-    let weatherKey= process.env.WEATHER_API_KEY;
-    let weatherURL= `https://api.weatherbit.io/v2.0/forecast/daily?city=${cityName}&key=${weatherKey}`;
-    // console.log("blah");
-  try{
-    let data =await axios.get(weatherURL);
-    // console.log(`${data.data.data[0].pres} here the first one`);
-    let receivedData = data.data;
-    // console.log(receivedData);
-    res.status=200;
-    res.send(`City: ${receivedData.city_name}  -  Longitude: ${receivedData.lon}  -  Latitude: ${receivedData.lat}`);
-  }
-  catch{
-    res.status =500;
-    res.send(`ERROR: DATA NOT FOUND FOR REQUIRED REGION`);
-
-  }
-})
+server.get('/searchCity', wthr.weatherCityLonLat);
 
 // localhost:3050/cityData?cityName=paris
-server.get('/cityData',async (req, res)=>{
-  let cityName = req.query.cityName;
-  let weatherKey= process.env.WEATHER_API_KEY;
-  let weatherURL= `https://api.weatherbit.io/v2.0/forecast/daily?city=${cityName}&key=${weatherKey}`;
-  console.log(`before ${cityName}`);
-  try{
-    let data =await axios.get(weatherURL);
-    let receivedData = data.data;
-    // console.log(receivedData);
-    let cityData = receivedData.data.map(day => new Forecast(day));
-    // console.log(cityData);
-      res.status=200;
-      res.send(cityData);
+server.get('/cityData', wthr.weatherForcast);
 
-
-  }
-  catch{
-    res.status =500;
-    res.send(`ERROR: DATA NOT FOUND FOR REQUIRED REGION`);
-
-  }
-  
-})
-
-class Forecast{
-  constructor(city){
-      this.date= city.valid_date,
-      this.description= city.weather.description
-  }
+function home(req, res){
+  res.send('Home...');
 }
+
+function test(req, res){
+  res.send('hello');
+}
+
 
 server.listen(PORT, ()=>{
   console.log(`Listening to PORT ${PORT} o.O`);
