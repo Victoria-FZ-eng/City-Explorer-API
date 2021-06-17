@@ -1,5 +1,11 @@
+// url-weather: https://api.weatherbit.io/v2.0/forecast/daily
+// url-movies: https://api.themoviedb.org/3/search/movie
+
+'use strict';
 const express = require('express');
 const server = express();
+
+const axios = require('axios');
 
 const weather = require('./data/weather.json');
 
@@ -8,25 +14,28 @@ const { response } = require('express');
 server.use(cors()); 
 
 
-const PORT = process.env.PORT || 3030;
+// localhost:3030
+const PORT = process.env.PORT || 3050;
  require("dotenv").config();
 
- // localhost:3030/
+
+
+ // localhost:3050/
  server.get('/',(req,res) =>{
     res.send('Home...');
 })
 
-// localhost:3030/test
+// localhost:3050/test
 server.get('/test',(req, res)=>{
   res.send('hello');
 })
 
-// localhost:3030/weatherData
+// localhost:3050/weatherData
 server.get('/weatherData', (req, res)=>{
     res.send(weather);
 })
 
-// localhost:3030/lon-lat
+// localhost:3050/lon-lat
 server.get('/lon-lat', (req, res)=>{
     let dataArr =weather.map((city)=> {
         return [`longitude: ${city.lon}` , `latitude: ${city.lat}`];
@@ -34,61 +43,158 @@ server.get('/lon-lat', (req, res)=>{
     res.send(dataArr);
 })
 
-// localhost:3030/searchCity?cityName=amman
-server.get('/searchCity', (req, res)=>{
-    let cityName = req.query.cityName;
-    console.log(cityName);
+// localhost:3050/movies?location=germany
+server.get('/movies',  (req, res)=>{
+  let location = req.query.location;
+  let movieKey= process.env.MOVIE_API_KEY;
+  let movieURL= `https://api.themoviedb.org/3/search/movie?api_key=${movieKey}&query=${location}`;
 
-    let cityFound = weather.find((city)=>{
-        let name = city.city_name;
-        // console.log(`name: ${name}`);
-        if (name.toLocaleLowerCase() == cityName.toLocaleLowerCase()){
-        // console.log("inside find");
-        return city;}   
+  axios
+    .get(movieURL).then(movies=>{
+      
+      const moviesObjects = movies.data.results.map(obj=> new Movies (obj));
+      
+      if( moviesObjects.length != 0){
+      res.send(moviesObjects);
+      console.log(moviesObjects);}
+      else{
+          res.status(500).send(`${err}: MOVIE'S DATA NOT FOUND FOR REQUIRED LOCATION`);
+          console.log("not valid");
+      }
+      
     })
-    // console.log(cityFound);
-    if(cityFound){
-        res.status = 200;
-        res.send(`City: ${cityFound.city_name}  -  Longitude: ${cityFound.lon}  -  Latitude: ${cityFound.lat}`);
-    }else if (! cityFound){
-        res.status =500;
-        res.send(`ERROR: DATA NOT FOUND FOR REQUIRED REGION`);
-    }
-})
-
-// localhost:3030/cityData?cityName=paris
-server.get('/cityData', (req, res)=>{
-  let cityName = req.query.cityName;
-  let cityValidation = weather.find((city)=>{
-      return (city.city_name.toLocaleLowerCase() == cityName.toLocaleLowerCase());
+    .catch(err => {
+      res.status(500).send(`${err}: MOVIE'S DATA NOT FOUND FOR REQUIRED LOCATION`);
+      console.log("catch");
   })
-//   console.log("cityValidation");
+  
 
-  if (cityValidation){
-    //   console.log("inside if")
-    let cityData = cityValidation.data.map(day => new Forecast(day));
-    console.log(cityData);
-      res.status=200;
-      res.send(cityData);
+})
+ class Movies {
+   constructor(film){
+     this.poster = film.poster_path,
+     this.name = film.original_title,
+     this.description = film.overview,
+     this.date = film.release_date,
+     this.pop = film.popularity
+   }
+
+ }
+
+// localhost:3050/searchCity?cityName=amman
+server.get('/searchCity',async (req,res)=>{
+     let cityName = req.query.cityName;
+    //  console.log(`weather: ${weather} kjhkhkjhkjhkjhkjhkh`)
+    let weatherKey= process.env.WEATHER_API_KEY;
+    let weatherURL= `https://api.weatherbit.io/v2.0/forecast/daily?city=${cityName}&key=${weatherKey}`;
+    // console.log("blah");
+  try{
+    let data =await axios.get(weatherURL);
+    // console.log(`${data.data.data[0].pres} here the first one`);
+    let receivedData = data.data;
+    // console.log(receivedData);
+    res.status=200;
+    res.send(`City: ${receivedData.city_name}  -  Longitude: ${receivedData.lon}  -  Latitude: ${receivedData.lat}`);
   }
-  else{
+  catch{
     res.status =500;
     res.send(`ERROR: DATA NOT FOUND FOR REQUIRED REGION`);
+
   }
 })
 
+// localhost:3050/cityData?cityName=paris
+server.get('/cityData',async (req, res)=>{
+  let cityName = req.query.cityName;
+  let weatherKey= process.env.WEATHER_API_KEY;
+  let weatherURL= `https://api.weatherbit.io/v2.0/forecast/daily?city=${cityName}&key=${weatherKey}`;
+  console.log(`before ${cityName}`);
+  try{
+    let data =await axios.get(weatherURL);
+    let receivedData = data.data;
+    // console.log(receivedData);
+    let cityData = receivedData.data.map(day => new Forecast(day));
+    // console.log(cityData);
+      res.status=200;
+      res.send(cityData);
 
+
+  }
+  catch{
+    res.status =500;
+    res.send(`ERROR: DATA NOT FOUND FOR REQUIRED REGION`);
+
+  }
+  
+})
 
 class Forecast{
-    constructor(city){
-        this.date= city.valid_date,
-        this.description= city.weather.description
-    }
+  constructor(city){
+      this.date= city.valid_date,
+      this.description= city.weather.description
+  }
 }
 
 server.listen(PORT, ()=>{
-    console.log(`Listening to PORT ${PORT} o.O`);
+  console.log(`Listening to PORT ${PORT} o.O`);
 })
+
+// ---------------------------------------------------------------------
+// ------------------------for lab 07 ----------------------------------
+// ----------------------------------------------------------------------
+
+// localhost:3030/searchCity?cityName=amman
+// server.get('/searchCity', (req, res)=>{
+//     let cityName = req.query.cityName;
+//     console.log(cityName);
+
+//     let cityFound = weather.find((city)=>{
+//         let name = city.city_name;
+//         // console.log(`name: ${name}`);
+//         if (name.toLocaleLowerCase() == cityName.toLocaleLowerCase()){
+//         // console.log("inside find");
+//         return city;}   
+//     })
+//     // console.log(cityFound);
+//     if(cityFound){
+//         res.status = 200;
+//         res.send(`City: ${cityFound.city_name}  -  Longitude: ${cityFound.lon}  -  Latitude: ${cityFound.lat}`);
+//     }else if (! cityFound){
+//         res.status =500;
+//         res.send(`ERROR: DATA NOT FOUND FOR REQUIRED REGION`);
+//     }
+// })
+
+
+// localhost:3030/cityData?cityName=paris
+// server.get('/cityData', (req, res)=>{
+//   let cityName = req.query.cityName;
+//   let cityValidation = weather.find((city)=>{
+//       return (city.city_name.toLocaleLowerCase() == cityName.toLocaleLowerCase());
+//   })
+// //   console.log("cityValidation");
+
+//   if (cityValidation){
+//     //   console.log("inside if")
+//     let cityData = cityValidation.data.map(day => new Forecast(day));
+//     console.log(cityData);
+//       res.status=200;
+//       res.send(cityData);
+//   }
+//   else{
+//     res.status =500;
+//     res.send(`ERROR: DATA NOT FOUND FOR REQUIRED REGION`);
+//   }
+// })
+
+// -------------------------------------------------------------------------
+// ---------------------------for lab 07 -----------------------------------
+// -------------------------------------------------------------------------------
+
+
+
+
+
 
 
 
