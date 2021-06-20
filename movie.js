@@ -14,15 +14,16 @@ class Movies {
   }
 const mv = function movies (req, res){
     let location = req.query.location;
-    
+    let movieKey= process.env.MOVIE_API_KEY;
+    let movieURL= `https://api.themoviedb.org/3/search/movie?api_key=${movieKey}&query=${location}`;
     
     if(ramMemoryMovie[location] !== undefined) {
+      console.log("inside if");
        res.send(ramMemoryMovie[location]);
-       console.log("inside if");
+       
     }
     else {
-      let movieKey= process.env.MOVIE_API_KEY;
-    let movieURL= `https://api.themoviedb.org/3/search/movie?api_key=${movieKey}&query=${location}`;
+     
         console.log("inside else");
     axios
       .get(movieURL).then(movies=>{
@@ -30,6 +31,8 @@ const mv = function movies (req, res){
         const moviesObjects = movies.data.results.map(obj=> new Movies (obj));
         
         if( moviesObjects.length != 0){
+          
+          ramMemoryMovie[location]=moviesObjects;
         res.send(moviesObjects);
         // console.log(moviesObjects);
       }
